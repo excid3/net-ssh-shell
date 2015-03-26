@@ -16,6 +16,8 @@ module Net; module SSH; class Shell
       @on_error_output = nil
       @on_finish = nil
       @state = :new
+
+      @previous_line = ""
     end
 
     def [](key)
@@ -92,11 +94,20 @@ module Net; module SSH; class Shell
     end
 
     def on_stdout(ch, data)
-      if data.strip =~ /#{manager.separator} (\d+)$/
-        before = $`
+      if (@previous_line + data).strip =~ /#{manager.separator} (\d+)$/
+        @previous_line = ""
+
+        if data.strip =~ /#{manager.separator} (\d+)$/
+          before = $`
+        else
+          before = ""
+        end
+
         output!(before) unless before.empty?
         finished!($1)
       else
+        @previous_line = data
+
         output!(data)
       end
     end
